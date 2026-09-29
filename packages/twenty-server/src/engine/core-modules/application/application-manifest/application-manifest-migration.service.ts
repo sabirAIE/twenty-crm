@@ -7,6 +7,7 @@ import { isDefined } from 'twenty-shared/utils';
 
 import { ComputeApplicationManifestAllUniversalFlatEntityMapsService } from 'src/engine/core-modules/application/application-manifest/services/compute-application-manifest-all-universal-flat-entity-maps.service';
 import { addWorkflowManifestsToFlatEntityMapsOrThrow } from 'src/engine/core-modules/application/application-manifest/utils/add-workflow-manifests-to-flat-entity-maps-or-throw.util';
+import { addDeletedWorkflowVersionsToOperationRecord } from 'src/engine/core-modules/application/application-manifest/utils/add-deleted-workflow-versions-to-operation-record.util';
 import { buildAllFlatEntityOperationRecordByMetadataNameFromFromTo } from 'src/engine/core-modules/application/application-manifest/utils/build-all-flat-entity-operation-record-by-metadata-name-from-from-to.util';
 import { buildFromToAllUniversalFlatEntityMaps } from 'src/engine/core-modules/application/application-manifest/utils/build-from-to-all-universal-flat-entity-maps.util';
 import { getApplicationSubAllFlatEntityMaps } from 'src/engine/core-modules/application/application-manifest/utils/get-application-sub-all-flat-entity-maps.util';
@@ -235,17 +236,21 @@ export class ApplicationManifestMigrationService {
     });
 
     const allFlatEntityOperationRecordByMetadataName =
-      buildAllFlatEntityOperationRecordByMetadataNameFromFromTo({
+      addDeletedWorkflowVersionsToOperationRecord({
         fromAllFlatEntityMaps,
-        toAllUniversalFlatEntityMaps,
-        buildOptions: {
-          isSystemBuild: false,
-          inferDeletionFromMissingEntities: inferDeletionFromMissingEntities
-            ? true
-            : undefined,
-          applicationUniversalIdentifier:
-            ownerFlatApplication.universalIdentifier,
-        },
+        allFlatEntityOperationRecordByMetadataName:
+          buildAllFlatEntityOperationRecordByMetadataNameFromFromTo({
+            fromAllFlatEntityMaps,
+            toAllUniversalFlatEntityMaps,
+            buildOptions: {
+              isSystemBuild: false,
+              inferDeletionFromMissingEntities: inferDeletionFromMissingEntities
+                ? true
+                : undefined,
+              applicationUniversalIdentifier:
+                ownerFlatApplication.universalIdentifier,
+            },
+          }),
       });
 
     await this.applicationWorkflowLifecycleWorkspaceService.assertUpdateKeepsInProgressRunsExecutable(
