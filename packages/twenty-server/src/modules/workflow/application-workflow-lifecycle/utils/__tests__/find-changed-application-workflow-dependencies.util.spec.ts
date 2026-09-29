@@ -49,6 +49,7 @@ describe('findChangedApplicationWorkflowDependencies', () => {
   it('reports nothing when the update keeps the executed definitions', () => {
     const changes = findChangedApplicationWorkflowDependencies({
       fromAllFlatEntityMaps,
+      shouldBlockLogicFunctionUpdates: true,
       flatEntityOperationRecordByMetadataName: operationRecord({
         logicFunction: {
           flatEntityToCreate: {},
@@ -75,6 +76,7 @@ describe('findChangedApplicationWorkflowDependencies', () => {
   it('reports changed and removed functions, agents and workflows by id', () => {
     const changes = findChangedApplicationWorkflowDependencies({
       fromAllFlatEntityMaps,
+      shouldBlockLogicFunctionUpdates: true,
       flatEntityOperationRecordByMetadataName: operationRecord({
         workflow: {
           flatEntityToCreate: {},
@@ -100,6 +102,32 @@ describe('findChangedApplicationWorkflowDependencies', () => {
     expect([...changes.changedLogicFunctionDescriptionById]).toEqual([
       ['greet-id', 'logic function "greet", which this update changes'],
     ]);
+    expect([...changes.changedAgentDescriptionById]).toEqual([
+      ['summarizer-id', 'agent "Summarizer", which this update removes'],
+    ]);
+  });
+
+  it('lets function updates through once new bundles may already be stored, but still reports removals', () => {
+    const changes = findChangedApplicationWorkflowDependencies({
+      fromAllFlatEntityMaps,
+      shouldBlockLogicFunctionUpdates: false,
+      flatEntityOperationRecordByMetadataName: operationRecord({
+        logicFunction: {
+          flatEntityToCreate: {},
+          flatEntityToUpdate: {
+            'greet-uid': { ...greet, checksum: 'checksum-2' },
+          },
+          flatEntityToDelete: {},
+        },
+        agent: {
+          flatEntityToCreate: {},
+          flatEntityToUpdate: {},
+          flatEntityToDelete: { 'summarizer-uid': summarizer },
+        },
+      }),
+    });
+
+    expect(changes.changedLogicFunctionDescriptionById.size).toBe(0);
     expect([...changes.changedAgentDescriptionById]).toEqual([
       ['summarizer-id', 'agent "Summarizer", which this update removes'],
     ]);

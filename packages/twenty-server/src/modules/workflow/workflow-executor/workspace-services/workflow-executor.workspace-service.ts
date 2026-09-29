@@ -135,24 +135,6 @@ export class WorkflowExecutorWorkspaceService {
       return;
     }
 
-    const workflow = isDefined(workflowRun.coreWorkflowId)
-      ? await this.workflowCoreSyncService.findCoreWorkflowById(
-          workspaceId,
-          workflowRun.coreWorkflowId,
-        )
-      : null;
-
-    if (!isDefined(workflow)) {
-      throw new Error(
-        `Workflow run ${workflowRun.id} has no core workflow identity for billing`,
-      );
-    }
-
-    const billingSpenders = {
-      workflowId: workflow.workspaceWorkflowId ?? workflow.id,
-      applicationId: workflow.applicationId,
-    };
-
     let actionOutput: WorkflowActionOutput;
 
     if (
@@ -163,6 +145,24 @@ export class WorkflowExecutorWorkspaceService {
         workflowRunStatus: workflowRun.status,
       })
     ) {
+      const workflow = isDefined(workflowRun.coreWorkflowId)
+        ? await this.workflowCoreSyncService.findCoreWorkflowById(
+            workspaceId,
+            workflowRun.coreWorkflowId,
+          )
+        : null;
+
+      if (!isDefined(workflow)) {
+        throw new Error(
+          `Workflow run ${workflowRun.id} has no core workflow identity for billing`,
+        );
+      }
+
+      const billingSpenders = {
+        workflowId: workflow.workspaceWorkflowId ?? workflow.id,
+        applicationId: workflow.applicationId,
+      };
+
       actionOutput = await this.executeStep({
         step: stepToExecute,
         steps,
@@ -205,6 +205,10 @@ export class WorkflowExecutorWorkspaceService {
           actionOutput.shouldFailSafely = true;
         }
       }
+
+      if (!isDefined(actionOutput.error) && !actionOutput.shouldFailSafely) {
+        await this.sendWorkflowNodeRunEvent(workspaceId, billingSpenders);
+      }
     } else if (
       shouldFailSafely({
         step: stepToExecute,
@@ -227,17 +231,6 @@ export class WorkflowExecutorWorkspaceService {
       };
     } else {
       return;
-    }
-
-    const isError =
-      isDefined(actionOutput.error) && !actionOutput.shouldFailSafely;
-
-    if (
-      !isError &&
-      !actionOutput.shouldFailSafely &&
-      !actionOutput.shouldSkipStepExecution
-    ) {
-      await this.sendWorkflowNodeRunEvent(workspaceId, billingSpenders);
     }
 
     const { shouldProcessNextSteps } = await this.processStepExecutionResult({

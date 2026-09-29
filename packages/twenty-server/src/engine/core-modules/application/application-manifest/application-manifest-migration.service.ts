@@ -248,6 +248,7 @@ export class ApplicationManifestMigrationService {
         fromAllFlatEntityMaps,
         flatEntityOperationRecordByMetadataName:
           allFlatEntityOperationRecordByMetadataName,
+        dryRun,
       },
     );
 

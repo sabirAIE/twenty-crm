@@ -38,6 +38,7 @@ export class ApplicationWorkflowLifecycleWorkspaceService {
     applicationName,
     fromAllFlatEntityMaps,
     flatEntityOperationRecordByMetadataName,
+    dryRun,
   }: {
     workspaceId: string;
     applicationName: string;
@@ -46,10 +47,12 @@ export class ApplicationWorkflowLifecycleWorkspaceService {
       'flatWorkflowMaps' | 'flatLogicFunctionMaps' | 'flatAgentMaps'
     >;
     flatEntityOperationRecordByMetadataName: AllFlatEntityOperationRecordByMetadataName;
+    dryRun: boolean;
   }): Promise<void> {
     const changedDependencies = findChangedApplicationWorkflowDependencies({
       fromAllFlatEntityMaps,
       flatEntityOperationRecordByMetadataName,
+      shouldBlockLogicFunctionUpdates: dryRun,
     });
 
     if (

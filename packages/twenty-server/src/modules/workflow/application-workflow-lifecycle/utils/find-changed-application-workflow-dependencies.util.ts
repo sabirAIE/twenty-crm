@@ -9,12 +9,14 @@ import { computeLogicFunctionExecutionFingerprint } from 'src/modules/workflow/a
 export const findChangedApplicationWorkflowDependencies = ({
   fromAllFlatEntityMaps,
   flatEntityOperationRecordByMetadataName,
+  shouldBlockLogicFunctionUpdates,
 }: {
   fromAllFlatEntityMaps: Pick<
     AllFlatEntityMaps,
     'flatWorkflowMaps' | 'flatLogicFunctionMaps' | 'flatAgentMaps'
   >;
   flatEntityOperationRecordByMetadataName: AllFlatEntityOperationRecordByMetadataName;
+  shouldBlockLogicFunctionUpdates: boolean;
 }): ChangedApplicationWorkflowDependencies => {
   const { workflow, logicFunction, agent } =
     flatEntityOperationRecordByMetadataName;
@@ -49,7 +51,9 @@ export const findChangedApplicationWorkflowDependencies = ({
   }
 
   for (const [universalIdentifier, updatedLogicFunction] of Object.entries(
-    logicFunction?.flatEntityToUpdate ?? {},
+    shouldBlockLogicFunctionUpdates
+      ? (logicFunction?.flatEntityToUpdate ?? {})
+      : {},
   )) {
     const existingLogicFunction =
       fromAllFlatEntityMaps.flatLogicFunctionMaps.byUniversalIdentifier[

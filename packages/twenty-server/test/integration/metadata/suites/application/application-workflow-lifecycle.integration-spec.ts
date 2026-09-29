@@ -171,15 +171,6 @@ const startRunWaitingOnForm = async (): Promise<string> => {
   return workflowRunId;
 };
 
-const stopRun = async (workflowRunId: string) => {
-  const response = await workflowGraphqlRequest(
-    'mutation Stop($workflowRunId: UUID!) { stopWorkflowRun(workflowRunId: $workflowRunId) { id status } }',
-    { workflowRunId },
-  );
-
-  expect(response.body.errors).toBeUndefined();
-};
-
 const submitForm = async (workflowRunId: string) => {
   const response = await workflowGraphqlRequest(
     'mutation Submit($input: SubmitFormStepInput!) { submitFormStep(input: $input) }',
@@ -241,7 +232,7 @@ describe('application workflow lifecycle', () => {
     jest.useFakeTimers();
   });
 
-  it('keeps in-progress runs on the definitions they started with', async () => {
+  it('keeps in-progress runs on their definitions or fails them at a changed step', async () => {
     const installation = await syncApplication({ manifest: INITIAL_MANIFEST });
 
     expect(installation.errors).toBeUndefined();
@@ -271,12 +262,13 @@ describe('application workflow lifecycle', () => {
       functionChecksum: 'checksum-2',
       greetStepName: 'Greet again',
     });
-    const rejectedFunctionUpdate = await syncApplication({
+    const rejectedFunctionUpdatePlan = await syncApplication({
       manifest: functionUpdate,
+      dryRun: true,
       expectToFail: true,
     });
 
-    expect(JSON.stringify(rejectedFunctionUpdate.errors)).toContain(
+    expect(JSON.stringify(rejectedFunctionUpdatePlan.errors)).toContain(
       'still needs logic function',
     );
     expect(await findFunctionChecksum()).toBe('checksum-1');
@@ -295,14 +287,21 @@ describe('application workflow lifecycle', () => {
     );
     expect(await findDefinitions()).toHaveLength(1);
 
-    await stopRun(workflowRunId);
-
-    const acceptedFunctionUpdate = await syncApplication({
+    const appliedFunctionUpdate = await syncApplication({
       manifest: functionUpdate,
     });
 
-    expect(acceptedFunctionUpdate.errors).toBeUndefined();
+    expect(appliedFunctionUpdate.errors).toBeUndefined();
     expect(await findFunctionChecksum()).toBe('checksum-2');
+
+    await submitForm(workflowRunId);
+
+    const failedRun = await waitForRunToEnd(workflowRunId);
+
+    expect(failedRun.status).toBe('FAILED');
+    expect(failedRun.state.stepInfos[GREET_STEP_ID]?.error).toContain(
+      'changed or removed what step',
+    );
 
     const removal = await syncApplication({
       manifest: buildManifest({
