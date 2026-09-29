@@ -71,7 +71,6 @@ export class ComputeApplicationManifestAllUniversalFlatEntityMapsService {
     existingAllFlatEntityMaps = fromAllFlatEntityMaps,
     isLogicFunctionPrebuiltModeEnabled,
     isApplicationWorkflowsEnabled = false,
-    inferDeletionFromMissingEntities = false,
     now,
     workspaceId,
   }: {
@@ -81,7 +80,6 @@ export class ComputeApplicationManifestAllUniversalFlatEntityMapsService {
     existingAllFlatEntityMaps?: AllFlatEntityMaps;
     isLogicFunctionPrebuiltModeEnabled: boolean;
     isApplicationWorkflowsEnabled?: boolean;
-    inferDeletionFromMissingEntities?: boolean;
     now: string;
     workspaceId: string;
   }): AllFlatEntityMaps {
@@ -708,28 +706,6 @@ export class ComputeApplicationManifestAllUniversalFlatEntityMapsService {
         universalFlatEntityMapsToMutate:
           allUniversalFlatEntityMaps.flatSettingsMenuItemMaps,
       });
-    }
-
-    const declaredWorkflowIds = new Set(
-      workflows.map((workflow) => workflow.universalIdentifier),
-    );
-    for (const existing of Object.values(
-      fromAllFlatEntityMaps.flatWorkflowMaps.byUniversalIdentifier,
-    )) {
-      if (
-        inferDeletionFromMissingEntities &&
-        isDefined(existing) &&
-        !isDefined(existing.workspaceWorkflowId) &&
-        !declaredWorkflowIds.has(existing.universalIdentifier)
-      ) {
-        throw new ApplicationException(
-          'Removing application workflows is not supported by the defineWorkflow POC; existing runs may still reference them',
-          ApplicationExceptionCode.INVALID_INPUT,
-          {
-            userFriendlyMessage: msg`Removing application workflows is not supported yet.`,
-          },
-        );
-      }
     }
 
     if (workflows.length > 0) {

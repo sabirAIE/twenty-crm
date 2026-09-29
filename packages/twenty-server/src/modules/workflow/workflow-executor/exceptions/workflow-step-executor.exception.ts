@@ -11,6 +11,7 @@ export enum WorkflowStepExecutorExceptionCode {
   INVALID_STEP_INPUT = 'INVALID_STEP_INPUT',
   STEP_NOT_FOUND = 'STEP_NOT_FOUND',
   INTERNAL_ERROR = 'INTERNAL_ERROR',
+  EXECUTION_DEPENDENCY_CHANGED = 'EXECUTION_DEPENDENCY_CHANGED',
 }
 
 const getWorkflowStepExecutorExceptionUserFriendlyMessage = (
@@ -27,6 +28,8 @@ const getWorkflowStepExecutorExceptionUserFriendlyMessage = (
       return msg`Invalid workflow step input.`;
     case WorkflowStepExecutorExceptionCode.INTERNAL_ERROR:
       return STANDARD_ERROR_MESSAGE;
+    case WorkflowStepExecutorExceptionCode.EXECUTION_DEPENDENCY_CHANGED:
+      return msg`The application changed what this step runs after the run started. Start a new run.`;
     default:
       assertUnreachable(code);
   }

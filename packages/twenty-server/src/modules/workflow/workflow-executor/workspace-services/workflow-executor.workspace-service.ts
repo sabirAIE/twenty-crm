@@ -52,6 +52,8 @@ import { RUN_WORKFLOW_JOB_NAME } from 'src/modules/workflow/workflow-runner/cons
 import { type RunWorkflowJobData } from 'src/modules/workflow/workflow-runner/types/run-workflow-job-data.type';
 import { buildRunWorkflowJobOptions } from 'src/modules/workflow/workflow-runner/utils/build-run-workflow-job-options.util';
 import { WorkflowRunWorkspaceService } from 'src/modules/workflow/workflow-runner/workflow-run/workflow-run.workspace-service';
+import { WorkflowRunPinnedDependenciesService } from 'src/modules/workflow/application-workflow-lifecycle/services/workflow-run-pinned-dependencies.service';
+import { type WorkflowRunPinnedDependencies } from 'src/modules/workflow/application-workflow-lifecycle/types/workflow-run-pinned-dependencies.type';
 
 const MAX_EXECUTED_STEPS_COUNT = 20;
 
@@ -72,6 +74,7 @@ export class WorkflowExecutorWorkspaceService {
     private readonly featureFlagService: FeatureFlagService,
     private readonly exceptionHandlerService: ExceptionHandlerService,
     private readonly metricsService: MetricsService,
+    private readonly workflowRunPinnedDependenciesService: WorkflowRunPinnedDependenciesService,
     @InjectMessageQueue(MessageQueue.workflowQueue)
     private readonly messageQueueService: MessageQueueService,
   ) {}
@@ -167,6 +170,7 @@ export class WorkflowExecutorWorkspaceService {
         workflowRunId,
         workspaceId,
         billingSpenders,
+        pinnedDependencies: workflowRun.state.pinnedDependencies,
       });
 
       if (isDefined(actionOutput.error) && !actionOutput.isUserError) {
@@ -507,6 +511,7 @@ export class WorkflowExecutorWorkspaceService {
     workflowRunId,
     workspaceId,
     billingSpenders,
+    pinnedDependencies,
   }: {
     step: WorkflowAction;
     steps: WorkflowAction[];
@@ -514,6 +519,7 @@ export class WorkflowExecutorWorkspaceService {
     workflowRunId: string;
     workspaceId: string;
     billingSpenders: WorkflowBillingSpenders;
+    pinnedDependencies?: WorkflowRunPinnedDependencies;
   }) {
     const stepId = step.id;
 
@@ -538,6 +544,10 @@ export class WorkflowExecutorWorkspaceService {
       if (isDefined(nodeRunRefusal)) {
         return nodeRunRefusal;
       }
+
+      await this.workflowRunPinnedDependenciesService.assertStepDependenciesUnchanged(
+        { workspaceId, step, pinnedDependencies },
+      );
 
       return await workflowAction.execute({
         currentStepId: stepId,

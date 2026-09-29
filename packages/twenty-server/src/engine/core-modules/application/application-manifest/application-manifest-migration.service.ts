@@ -23,6 +23,7 @@ import { TWENTY_STANDARD_APPLICATION } from 'src/engine/workspace-manager/twenty
 import { WorkspaceMigrationBuilderException } from 'src/engine/workspace-manager/workspace-migration/exceptions/workspace-migration-builder-exception';
 import { WorkspaceMigrationValidateBuildAndRunService } from 'src/engine/workspace-manager/workspace-migration/services/workspace-migration-validate-build-and-run-service';
 import { WorkspaceMigration } from 'src/engine/workspace-manager/workspace-migration/workspace-migration-builder/types/workspace-migration.type';
+import { ApplicationWorkflowLifecycleWorkspaceService } from 'src/modules/workflow/application-workflow-lifecycle/services/application-workflow-lifecycle.workspace-service';
 
 @Injectable()
 export class ApplicationManifestMigrationService {
@@ -32,6 +33,7 @@ export class ApplicationManifestMigrationService {
     private readonly applicationService: ApplicationService,
     private readonly computeManifestFlatEntityMapsService: ComputeApplicationManifestAllUniversalFlatEntityMapsService,
     private readonly logger: LoggerService,
+    private readonly applicationWorkflowLifecycleWorkspaceService: ApplicationWorkflowLifecycleWorkspaceService,
   ) {}
 
   async syncPreInstallLogicFunctionFromManifest({
@@ -215,7 +217,6 @@ export class ApplicationManifestMigrationService {
         ownerFlatApplication,
         fromAllFlatEntityMaps,
         existingAllFlatEntityMaps,
-        inferDeletionFromMissingEntities,
         isApplicationWorkflowsEnabled:
           featureFlagsMap[FeatureFlagKey.IS_APPLICATION_WORKFLOWS_ENABLED],
         isLogicFunctionPrebuiltModeEnabled:
@@ -239,6 +240,16 @@ export class ApplicationManifestMigrationService {
             ownerFlatApplication.universalIdentifier,
         },
       });
+
+    await this.applicationWorkflowLifecycleWorkspaceService.assertUpdateKeepsInProgressRunsExecutable(
+      {
+        workspaceId,
+        applicationName: ownerFlatApplication.name,
+        fromAllFlatEntityMaps,
+        flatEntityOperationRecordByMetadataName:
+          allFlatEntityOperationRecordByMetadataName,
+      },
+    );
 
     const validateBuildRunStart = performance.now();
     const validateAndBuildResult =

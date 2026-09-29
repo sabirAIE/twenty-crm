@@ -22,6 +22,7 @@ import { type WorkflowVersionWorkspaceEntity } from 'src/modules/workflow/common
 import { getStepRetryAttempt } from 'src/modules/workflow/workflow-executor/utils/get-step-retry-attempt.util';
 import { type WorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/types/workflow-action.type';
 import { type WorkflowTrigger } from 'src/modules/workflow/workflow-trigger/types/workflow-trigger.type';
+import { type WorkflowRunPinnedDependencies } from 'src/modules/workflow/application-workflow-lifecycle/types/workflow-run-pinned-dependencies.type';
 import {
   WorkflowRunException,
   WorkflowRunExceptionCode,
@@ -49,6 +50,7 @@ export class WorkflowRunWorkspaceService {
     status,
     triggerPayload,
     error,
+    pinnedDependencies,
     workspaceId,
   }: {
     coreWorkflowId: string;
@@ -66,6 +68,7 @@ export class WorkflowRunWorkspaceService {
     triggerPayload: object;
     workflowRunId?: string;
     error?: string;
+    pinnedDependencies?: WorkflowRunPinnedDependencies;
     workspaceId: string;
   }) {
     const authContext = buildSystemAuthContext(workspaceId);
@@ -101,7 +104,12 @@ export class WorkflowRunWorkspaceService {
         createdBy,
         status,
         position,
-        state: this.getInitState({ trigger, steps }, triggerPayload, error),
+        state: this.getInitState(
+          { trigger, steps },
+          triggerPayload,
+          error,
+          pinnedDependencies,
+        ),
         enqueuedAt: status === WorkflowRunStatus.ENQUEUED ? new Date() : null,
       });
 
@@ -598,6 +606,7 @@ export class WorkflowRunWorkspaceService {
     workflowVersion: Pick<WorkflowVersionWorkspaceEntity, 'trigger' | 'steps'>,
     triggerPayload: object,
     error?: string,
+    pinnedDependencies?: WorkflowRunPinnedDependencies,
   ): WorkflowRunState | undefined {
     if (
       !isDefined(workflowVersion.trigger) ||
@@ -621,6 +630,7 @@ export class WorkflowRunWorkspaceService {
         ),
       },
       workflowRunError: error,
+      ...(isDefined(pinnedDependencies) ? { pinnedDependencies } : {}),
     };
   }
 

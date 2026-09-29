@@ -15,10 +15,12 @@ import { WorkflowRunnerWorkspaceService } from 'src/modules/workflow/workflow-ru
 import { CoreWorkflowRunnerService } from 'src/modules/workflow/workflow-runner/services/core-workflow-runner.service';
 import { WorkflowCoreModule } from 'src/engine/core-modules/workflow/workflow-core.module';
 import { WorkflowVersionCoreModule } from 'src/engine/core-modules/workflow/workflow-version-core.module';
+import { ApplicationWorkflowLifecycleModule } from 'src/modules/workflow/application-workflow-lifecycle/application-workflow-lifecycle.module';
 
 @Module({
   imports: [
     ApplicationModule,
+    ApplicationWorkflowLifecycleModule,
     FeatureFlagModule,
     WorkflowCommonModule,
     WorkflowExecutorModule,
