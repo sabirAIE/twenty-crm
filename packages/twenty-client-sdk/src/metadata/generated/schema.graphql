@@ -2454,6 +2454,182 @@ enum ApplicationHealthStatus {
   UNKNOWN
 }
 
+type LogicFunctionLogs {
+  """Execution Logs"""
+  logs: String!
+}
+
+type IndexField {
+  id: UUID!
+  fieldMetadataId: UUID!
+  order: Float!
+  subFieldName: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Index {
+  id: UUID!
+  name: String!
+  isCustom: Boolean
+  isUnique: Boolean!
+  indexWhereClause: String
+  indexType: IndexType!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  indexFieldMetadataList: [IndexField!]!
+}
+
+"""Type of the index"""
+enum IndexType {
+  BTREE
+  GIN
+}
+
+type Field {
+  id: UUID!
+  universalIdentifier: String!
+  type: FieldMetadataType!
+  name: String!
+  label: String!
+  description: String
+  icon: String
+  isActive: Boolean
+  isSystem: Boolean
+  isUIEditable: Boolean
+  writability: MetadataWritability
+  isUIReadOnly: Boolean @deprecated(reason: "Use isUIEditable")
+  isNullable: Boolean
+  isUnique: Boolean
+  isSearchable: Boolean
+  isAuditLogged: Boolean
+  defaultValue: JSON
+  options: JSON
+  settings: JSON
+  objectMetadataId: UUID!
+  isLabelSyncedWithName: Boolean
+  morphId: UUID
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  applicationId: UUID!
+  object: Object
+  relation: Relation
+  morphRelations: [Relation!]
+}
+
+"""Type of the field"""
+enum FieldMetadataType {
+  ACTOR
+  ADDRESS
+  ARRAY
+  BOOLEAN
+  CURRENCY
+  DATE
+  DATE_TIME
+  EMAILS
+  FILES
+  FULL_NAME
+  LINKS
+  MORPH_RELATION
+  MULTI_SELECT
+  NUMBER
+  NUMERIC
+  PHONES
+  POSITION
+  RATING
+  RAW_JSON
+  RELATION
+  RICH_TEXT
+  SELECT
+  TEXT
+  TS_VECTOR
+  UUID
+}
+
+type PageInfo {
+  """true if paging forward and there are more records."""
+  hasNextPage: Boolean
+
+  """true if paging backwards and there are more records."""
+  hasPreviousPage: Boolean
+
+  """The cursor of the first returned record."""
+  startCursor: ConnectionCursor
+
+  """The cursor of the last returned record."""
+  endCursor: ConnectionCursor
+}
+
+type FieldEdge {
+  """The node containing the Field"""
+  node: Field!
+
+  """Cursor for this node."""
+  cursor: ConnectionCursor!
+}
+
+type FieldConnection {
+  """Paging information"""
+  pageInfo: PageInfo!
+
+  """Array of edges."""
+  edges: [FieldEdge!]!
+}
+
+type IndexEdge {
+  """The node containing the Index"""
+  node: Index!
+
+  """Cursor for this node."""
+  cursor: ConnectionCursor!
+}
+
+type ObjectEdge {
+  """The node containing the Object"""
+  node: Object!
+
+  """Cursor for this node."""
+  cursor: ConnectionCursor!
+}
+
+type ObjectConnection {
+  """Paging information"""
+  pageInfo: PageInfo!
+
+  """Array of edges."""
+  edges: [ObjectEdge!]!
+}
+
+type ObjectFieldsConnection {
+  """Paging information"""
+  pageInfo: PageInfo!
+
+  """Array of edges."""
+  edges: [FieldEdge!]!
+}
+
+type ObjectIndexMetadatasConnection {
+  """Paging information"""
+  pageInfo: PageInfo!
+
+  """Array of edges."""
+  edges: [IndexEdge!]!
+}
+
+type ObjectRecordCount {
+  objectNamePlural: String!
+  totalCount: Int!
+}
+
+type SearchField {
+  id: UUID!
+  fieldMetadataId: UUID!
+  tsVectorFieldMetadataId: UUID!
+  position: Float!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 type MarketplaceApp {
   id: String!
   name: String!
@@ -2559,96 +2735,6 @@ enum WorkspacePersonEnrichmentOutcome {
   transientError
 }
 
-type Field {
-  id: UUID!
-  universalIdentifier: String!
-  type: FieldMetadataType!
-  name: String!
-  label: String!
-  description: String
-  icon: String
-  isActive: Boolean
-  isSystem: Boolean
-  isUIEditable: Boolean
-  writability: MetadataWritability
-  isUIReadOnly: Boolean @deprecated(reason: "Use isUIEditable")
-  isNullable: Boolean
-  isUnique: Boolean
-  isSearchable: Boolean
-  isAuditLogged: Boolean
-  defaultValue: JSON
-  options: JSON
-  settings: JSON
-  objectMetadataId: UUID!
-  isLabelSyncedWithName: Boolean
-  morphId: UUID
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  applicationId: UUID!
-  object: Object
-  relation: Relation
-  morphRelations: [Relation!]
-}
-
-"""Type of the field"""
-enum FieldMetadataType {
-  ACTOR
-  ADDRESS
-  ARRAY
-  BOOLEAN
-  CURRENCY
-  DATE
-  DATE_TIME
-  EMAILS
-  FILES
-  FULL_NAME
-  LINKS
-  MORPH_RELATION
-  MULTI_SELECT
-  NUMBER
-  NUMERIC
-  PHONES
-  POSITION
-  RATING
-  RAW_JSON
-  RELATION
-  RICH_TEXT
-  SELECT
-  TEXT
-  TS_VECTOR
-  UUID
-}
-
-type PageInfo {
-  """true if paging forward and there are more records."""
-  hasNextPage: Boolean
-
-  """true if paging backwards and there are more records."""
-  hasPreviousPage: Boolean
-
-  """The cursor of the first returned record."""
-  startCursor: ConnectionCursor
-
-  """The cursor of the last returned record."""
-  endCursor: ConnectionCursor
-}
-
-type FieldEdge {
-  """The node containing the Field"""
-  node: Field!
-
-  """Cursor for this node."""
-  cursor: ConnectionCursor!
-}
-
-type FieldConnection {
-  """Paging information"""
-  pageInfo: PageInfo!
-
-  """Array of edges."""
-  edges: [FieldEdge!]!
-}
-
 type Relation {
   type: RelationType!
   sourceObjectMetadata: Object!
@@ -2661,87 +2747,6 @@ type Relation {
 enum RelationType {
   ONE_TO_MANY
   MANY_TO_ONE
-}
-
-type IndexField {
-  id: UUID!
-  fieldMetadataId: UUID!
-  order: Float!
-  subFieldName: String
-  createdAt: DateTime!
-  updatedAt: DateTime!
-}
-
-type Index {
-  id: UUID!
-  name: String!
-  isCustom: Boolean
-  isUnique: Boolean!
-  indexWhereClause: String
-  indexType: IndexType!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  indexFieldMetadataList: [IndexField!]!
-}
-
-"""Type of the index"""
-enum IndexType {
-  BTREE
-  GIN
-}
-
-type IndexEdge {
-  """The node containing the Index"""
-  node: Index!
-
-  """Cursor for this node."""
-  cursor: ConnectionCursor!
-}
-
-type ObjectEdge {
-  """The node containing the Object"""
-  node: Object!
-
-  """Cursor for this node."""
-  cursor: ConnectionCursor!
-}
-
-type ObjectConnection {
-  """Paging information"""
-  pageInfo: PageInfo!
-
-  """Array of edges."""
-  edges: [ObjectEdge!]!
-}
-
-type ObjectFieldsConnection {
-  """Paging information"""
-  pageInfo: PageInfo!
-
-  """Array of edges."""
-  edges: [FieldEdge!]!
-}
-
-type ObjectIndexMetadatasConnection {
-  """Paging information"""
-  pageInfo: PageInfo!
-
-  """Array of edges."""
-  edges: [IndexEdge!]!
-}
-
-type ObjectRecordCount {
-  objectNamePlural: String!
-  totalCount: Int!
-}
-
-type SearchField {
-  id: UUID!
-  fieldMetadataId: UUID!
-  tsVectorFieldMetadataId: UUID!
-  position: Float!
-  createdAt: DateTime!
-  updatedAt: DateTime!
 }
 
 type BillingEntitlement {
@@ -2776,11 +2781,6 @@ type DomainValidRecords {
 type UpsertRowLevelPermissionPredicatesResult {
   predicates: [RowLevelPermissionPredicate!]!
   predicateGroups: [RowLevelPermissionPredicateGroup!]!
-}
-
-type LogicFunctionLogs {
-  """Execution Logs"""
-  logs: String!
 }
 
 type DeleteTwoFactorAuthenticationMethod {
