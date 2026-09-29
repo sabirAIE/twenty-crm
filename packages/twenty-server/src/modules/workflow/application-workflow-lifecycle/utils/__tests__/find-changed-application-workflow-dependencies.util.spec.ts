@@ -68,8 +68,8 @@ describe('findChangedApplicationWorkflowDependencies', () => {
     });
 
     expect(changes.removedWorkflowIds.size).toBe(0);
-    expect(changes.changedLogicFunctionLabelById.size).toBe(0);
-    expect(changes.changedAgentLabelById.size).toBe(0);
+    expect(changes.changedLogicFunctionDescriptionById.size).toBe(0);
+    expect(changes.changedAgentDescriptionById.size).toBe(0);
   });
 
   it('reports changed and removed functions, agents and workflows by id', () => {
@@ -97,10 +97,10 @@ describe('findChangedApplicationWorkflowDependencies', () => {
     });
 
     expect([...changes.removedWorkflowIds]).toEqual(['workflow-id']);
-    expect([...changes.changedLogicFunctionLabelById]).toEqual([
+    expect([...changes.changedLogicFunctionDescriptionById]).toEqual([
       ['greet-id', 'logic function "greet", which this update changes'],
     ]);
-    expect([...changes.changedAgentLabelById]).toEqual([
+    expect([...changes.changedAgentDescriptionById]).toEqual([
       ['summarizer-id', 'agent "Summarizer", which this update removes'],
     ]);
   });

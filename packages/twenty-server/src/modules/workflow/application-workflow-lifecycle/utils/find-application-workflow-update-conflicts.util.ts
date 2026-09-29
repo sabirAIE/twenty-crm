@@ -7,11 +7,11 @@ import { getWorkflowRunStepsThatMayStillExecute } from 'src/modules/workflow/app
 import { getWorkflowStepsExecutionDependencies } from 'src/modules/workflow/application-workflow-lifecycle/utils/get-workflow-steps-execution-dependencies.util';
 
 export const findApplicationWorkflowUpdateConflicts = ({
-  activeWorkflowRuns,
+  inProgressWorkflowRuns,
   workflowNameById,
   changedDependencies,
 }: {
-  activeWorkflowRuns: Pick<
+  inProgressWorkflowRuns: Pick<
     WorkflowRunWorkspaceEntity,
     'coreWorkflowId' | 'state'
   >[];
@@ -20,8 +20,8 @@ export const findApplicationWorkflowUpdateConflicts = ({
 }): ApplicationWorkflowUpdateConflict[] => {
   const {
     removedWorkflowIds,
-    changedLogicFunctionLabelById,
-    changedAgentLabelById,
+    changedLogicFunctionDescriptionById,
+    changedAgentDescriptionById,
   } = changedDependencies;
 
   const conflictByWorkflowId = new Map<
@@ -29,7 +29,7 @@ export const findApplicationWorkflowUpdateConflicts = ({
     { workflowRunCount: number; blockedChanges: Set<string> }
   >();
 
-  for (const workflowRun of activeWorkflowRuns) {
+  for (const workflowRun of inProgressWorkflowRuns) {
     const { coreWorkflowId, state } = workflowRun;
 
     if (!isDefined(coreWorkflowId)) {
@@ -50,18 +50,19 @@ export const findApplicationWorkflowUpdateConflicts = ({
         );
 
       for (const logicFunctionId of logicFunctionIds) {
-        const label = changedLogicFunctionLabelById.get(logicFunctionId);
+        const description =
+          changedLogicFunctionDescriptionById.get(logicFunctionId);
 
-        if (isDefined(label)) {
-          blockedChanges.add(label);
+        if (isDefined(description)) {
+          blockedChanges.add(description);
         }
       }
 
       for (const agentId of agentIds) {
-        const label = changedAgentLabelById.get(agentId);
+        const description = changedAgentDescriptionById.get(agentId);
 
-        if (isDefined(label)) {
-          blockedChanges.add(label);
+        if (isDefined(description)) {
+          blockedChanges.add(description);
         }
       }
     }

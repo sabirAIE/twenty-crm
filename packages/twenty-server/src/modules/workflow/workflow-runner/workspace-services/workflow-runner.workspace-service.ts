@@ -177,6 +177,7 @@ export class WorkflowRunnerWorkspaceService {
       workflowRunId,
     );
   }
+
   async retryWorkflowRun(workspaceId: string, workflowRunId: string) {
     const workflowRun =
       await this.workflowRunWorkspaceService.getWorkflowRunOrFail({

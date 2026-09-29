@@ -431,15 +431,6 @@ export class ApplicationSyncService {
       },
     );
 
-    await this.applicationWorkflowLifecycleWorkspaceService.stopInProgressRuns({
-      workspaceId,
-      coreWorkflowIds: Object.values(
-        applicationFromAllFlatEntityMaps.flatWorkflowMaps.byUniversalIdentifier,
-      )
-        .filter(isDefined)
-        .map(({ id }) => id),
-    });
-
     // Uninstall also removes engine-owned and workspace-local metadata that
     // manifest omission intentionally preserves. Expand these explicit deletions
     // so dependents owned by other applications are cleaned up too.
@@ -474,6 +465,15 @@ export class ApplicationSyncService {
         'Validation errors occurred while uninstalling application',
       );
     }
+
+    await this.applicationWorkflowLifecycleWorkspaceService.stopInProgressRuns({
+      workspaceId,
+      coreWorkflowIds: Object.values(
+        applicationFromAllFlatEntityMaps.flatWorkflowMaps.byUniversalIdentifier,
+      )
+        .filter(isDefined)
+        .map(({ id }) => id),
+    });
 
     await this.applicationService.delete(
       applicationUniversalIdentifier,

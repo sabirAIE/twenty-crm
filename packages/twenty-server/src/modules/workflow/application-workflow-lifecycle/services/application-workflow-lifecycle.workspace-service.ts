@@ -54,8 +54,8 @@ export class ApplicationWorkflowLifecycleWorkspaceService {
 
     if (
       changedDependencies.removedWorkflowIds.size === 0 &&
-      changedDependencies.changedLogicFunctionLabelById.size === 0 &&
-      changedDependencies.changedAgentLabelById.size === 0
+      changedDependencies.changedLogicFunctionDescriptionById.size === 0 &&
+      changedDependencies.changedAgentDescriptionById.size === 0
     ) {
       return;
     }
@@ -70,7 +70,7 @@ export class ApplicationWorkflowLifecycleWorkspaceService {
     });
 
     const conflicts = findApplicationWorkflowUpdateConflicts({
-      activeWorkflowRuns: inProgressWorkflowRuns,
+      inProgressWorkflowRuns: inProgressWorkflowRuns,
       workflowNameById: Object.fromEntries(
         workflows.map(({ id, name, universalIdentifier }) => [
           id,

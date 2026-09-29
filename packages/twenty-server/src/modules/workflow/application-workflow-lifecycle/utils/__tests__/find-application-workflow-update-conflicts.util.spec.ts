@@ -47,13 +47,13 @@ const buildRun = (
 
 const noChanges = {
   removedWorkflowIds: new Set<string>(),
-  changedLogicFunctionLabelById: new Map<string, string>(),
-  changedAgentLabelById: new Map<string, string>(),
+  changedLogicFunctionDescriptionById: new Map<string, string>(),
+  changedAgentDescriptionById: new Map<string, string>(),
 };
 
 const greetChanged = {
   ...noChanges,
-  changedLogicFunctionLabelById: new Map([
+  changedLogicFunctionDescriptionById: new Map([
     ['greet-id', 'logic function "greet", which this update changes'],
   ]),
 };
@@ -62,7 +62,7 @@ describe('findApplicationWorkflowUpdateConflicts', () => {
   it('blocks a change to a function that a run has not executed yet', () => {
     expect(
       findApplicationWorkflowUpdateConflicts({
-        activeWorkflowRuns: [
+        inProgressWorkflowRuns: [
           buildRun('workflow-id', {
             greet: StepStatus.NOT_STARTED,
             wait: StepStatus.NOT_STARTED,
@@ -87,7 +87,7 @@ describe('findApplicationWorkflowUpdateConflicts', () => {
   it('allows a change to a function that the run already executed', () => {
     expect(
       findApplicationWorkflowUpdateConflicts({
-        activeWorkflowRuns: [
+        inProgressWorkflowRuns: [
           buildRun('workflow-id', {
             greet: StepStatus.SUCCESS,
             wait: StepStatus.PENDING,
@@ -102,7 +102,7 @@ describe('findApplicationWorkflowUpdateConflicts', () => {
   it('blocks removing a workflow that still has runs in progress', () => {
     expect(
       findApplicationWorkflowUpdateConflicts({
-        activeWorkflowRuns: [
+        inProgressWorkflowRuns: [
           buildRun('workflow-id', {
             greet: StepStatus.SUCCESS,
             wait: StepStatus.PENDING,
@@ -126,7 +126,7 @@ describe('findApplicationWorkflowUpdateConflicts', () => {
   it('ignores runs that do not use a changed dependency', () => {
     expect(
       findApplicationWorkflowUpdateConflicts({
-        activeWorkflowRuns: [
+        inProgressWorkflowRuns: [
           buildRun('workflow-id', {
             greet: StepStatus.NOT_STARTED,
             wait: StepStatus.NOT_STARTED,

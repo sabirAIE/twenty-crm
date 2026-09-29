@@ -30,7 +30,7 @@ export const findChangedApplicationWorkflowDependencies = ({
       .filter(isDefined),
   );
 
-  const changedLogicFunctionLabelById = new Map<string, string>();
+  const changedLogicFunctionDescriptionById = new Map<string, string>();
 
   for (const universalIdentifier of Object.keys(
     logicFunction?.flatEntityToDelete ?? {},
@@ -41,7 +41,7 @@ export const findChangedApplicationWorkflowDependencies = ({
       ];
 
     if (isDefined(existingLogicFunction)) {
-      changedLogicFunctionLabelById.set(
+      changedLogicFunctionDescriptionById.set(
         existingLogicFunction.id,
         `logic function "${existingLogicFunction.name}", which this update removes`,
       );
@@ -62,14 +62,14 @@ export const findChangedApplicationWorkflowDependencies = ({
       computeLogicFunctionExecutionFingerprint(existingLogicFunction) !==
         computeLogicFunctionExecutionFingerprint(updatedLogicFunction)
     ) {
-      changedLogicFunctionLabelById.set(
+      changedLogicFunctionDescriptionById.set(
         existingLogicFunction.id,
         `logic function "${existingLogicFunction.name}", which this update changes`,
       );
     }
   }
 
-  const changedAgentLabelById = new Map<string, string>();
+  const changedAgentDescriptionById = new Map<string, string>();
 
   for (const universalIdentifier of Object.keys(
     agent?.flatEntityToDelete ?? {},
@@ -80,7 +80,7 @@ export const findChangedApplicationWorkflowDependencies = ({
       ];
 
     if (isDefined(existingAgent)) {
-      changedAgentLabelById.set(
+      changedAgentDescriptionById.set(
         existingAgent.id,
         `agent "${existingAgent.label}", which this update removes`,
       );
@@ -101,7 +101,7 @@ export const findChangedApplicationWorkflowDependencies = ({
       computeAgentExecutionFingerprint(existingAgent) !==
         computeAgentExecutionFingerprint(updatedAgent)
     ) {
-      changedAgentLabelById.set(
+      changedAgentDescriptionById.set(
         existingAgent.id,
         `agent "${existingAgent.label}", which this update changes`,
       );
@@ -110,7 +110,7 @@ export const findChangedApplicationWorkflowDependencies = ({
 
   return {
     removedWorkflowIds,
-    changedLogicFunctionLabelById,
-    changedAgentLabelById,
+    changedLogicFunctionDescriptionById,
+    changedAgentDescriptionById,
   };
 };

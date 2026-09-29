@@ -98,7 +98,7 @@ For `IF_ELSE`, each branch's `nextStepIds` identifies its entry steps. For `ITER
 
 Synchronization creates one ACTIVE version. Changing the source updates that same version without allocating another workflow or version ID. Keep both universal identifiers stable across releases.
 
-Existing runs keep the graph saved when they started, including their step inputs and edges. When a run starts, Twenty also records the built code of each function and the prompt, model and response format of each agent its steps use. A step runs only if these are unchanged; otherwise it fails and asks for a new run. Roles, credentials and connected accounts are not recorded: every step runs with the permissions that apply at that moment.
+Existing runs keep the graph saved when they started, including their step inputs and edges. When a run starts, Twenty also records each function's built-code checksum, handler and runtime, and each agent's prompt, model and response format. A step runs only if these are unchanged in the database; otherwise it fails and asks for a new run. Roles, credentials and connected accounts are not recorded: every step runs with the permissions that apply at that moment.
 
 An update is rejected while runs in progress still need something it changes or removes:
 
@@ -108,7 +108,7 @@ An update is rejected while runs in progress still need something it changes or 
 
 The error names each workflow and how many of its runs are affected. Wait for these runs to finish or stop them, then apply the update again. Runs in progress are those not started, queued or running, including runs waiting on a delay, a form or an automatic retry. Changes to the graph, and changes to steps that every run in progress has already passed, are accepted. Failed runs do not block updates; retrying one after such an update fails at the changed step.
 
-Updates are checked before new files replace the installed ones: `twenty app:install` validates the whole upgrade first, and `twenty apply` computes the plan first unless `--force` is used. `twenty dev` uploads files as they change, so use it only on workflows without runs you care about.
+Updates are checked before new files replace the installed ones: `twenty app:install` validates the whole upgrade first, and `twenty apply` computes the plan first unless `--force` is used. Files uploaded before a rejected sync still replace the installed bundles, so a run can execute them: this happens with `twenty dev`, `twenty apply --force`, a failing pre-install hook, or a run started between the check and the sync. Use development flows only on workflows without runs you care about.
 
 Removing a workflow from the manifest deletes its definition once none of its runs is in progress. Completed, failed and stopped runs keep their saved graph and stay in the runs list, subject to the usual run cleanup.
 

@@ -180,6 +180,35 @@ const stopRun = async (workflowRunId: string) => {
   expect(response.body.errors).toBeUndefined();
 };
 
+const submitForm = async (workflowRunId: string) => {
+  const response = await workflowGraphqlRequest(
+    'mutation Submit($input: SubmitFormStepInput!) { submitFormStep(input: $input) }',
+    {
+      input: {
+        stepId: FORM_STEP_ID,
+        workflowRunId,
+        response: { greeting: 'hello' },
+      },
+    },
+  );
+
+  expect(response.body.errors).toBeUndefined();
+};
+
+const retryRun = async (workflowRunId: string) => {
+  const response = await workflowGraphqlRequest(
+    'mutation Retry($workflowRunId: UUID!) { retryWorkflowRun(workflowRunId: $workflowRunId) { id status } }',
+    { workflowRunId },
+  );
+
+  expect(response.body.errors).toBeUndefined();
+};
+
+const waitForRunToEnd = (workflowRunId: string) =>
+  waitForRun(workflowRunId, ({ status }) =>
+    ['COMPLETED', 'FAILED', 'STOPPED'].includes(status),
+  );
+
 describe('application workflow lifecycle', () => {
   beforeAll(async () => {
     await updateFeatureFlag({
@@ -287,6 +316,41 @@ describe('application workflow lifecycle', () => {
     expect(await findDefinitions()).toHaveLength(0);
     expect((await findRun(workflowRunId)).state.flow).toEqual(
       startedRun.state.flow,
+    );
+  }, 120000);
+
+  it('fails a retried step whose function changed after the run started', async () => {
+    const reinstallation = await syncApplication({
+      manifest: buildManifest({
+        functionChecksum: 'checksum-2',
+        greetStepName: 'Greet',
+      }),
+    });
+
+    expect(reinstallation.errors).toBeUndefined();
+
+    const workflowRunId = await startRunWaitingOnForm();
+
+    await submitForm(workflowRunId);
+
+    expect((await waitForRunToEnd(workflowRunId)).status).toBe('FAILED');
+
+    const functionUpdate = await syncApplication({
+      manifest: buildManifest({
+        functionChecksum: 'checksum-3',
+        greetStepName: 'Greet',
+      }),
+    });
+
+    expect(functionUpdate.errors).toBeUndefined();
+
+    await retryRun(workflowRunId);
+
+    const retriedRun = await waitForRunToEnd(workflowRunId);
+
+    expect(retriedRun.status).toBe('FAILED');
+    expect(retriedRun.state.stepInfos[GREET_STEP_ID]?.error).toContain(
+      'changed or removed what step',
     );
   }, 120000);
 

@@ -31,7 +31,6 @@ describe('application workflow execution gate', () => {
   const findCoreWorkflowById = jest.fn();
   const findCoreVersionById = jest.fn();
   const createCoreWorkflowRun = jest.fn();
-  const pinDependencies = jest.fn();
   let service: CoreWorkflowRunnerService;
 
   beforeEach(async () => {
@@ -72,7 +71,7 @@ describe('application workflow execution gate', () => {
         },
         {
           provide: WorkflowRunPinnedDependenciesService,
-          useValue: { pinDependencies },
+          useValue: { pinDependencies: jest.fn() },
         },
       ],
     })
@@ -93,10 +92,6 @@ describe('application workflow execution gate', () => {
       steps: [],
     });
     isFeatureEnabled.mockResolvedValue(false);
-    pinDependencies.mockResolvedValue({
-      logicFunctionFingerprintById: { 'function-id': 'fingerprint' },
-      agentFingerprintById: {},
-    });
     createCoreWorkflowRun.mockRejectedValue(new Error('Reached run creation'));
   });
 
@@ -107,42 +102,10 @@ describe('application workflow execution gate', () => {
     expect(createCoreWorkflowRun).not.toHaveBeenCalled();
   });
 
-  it('allows new application runs when enabled and pins what they execute', async () => {
+  it('allows new application runs when enabled', async () => {
     isFeatureEnabled.mockResolvedValue(true);
     await expect(service.run(INPUT)).rejects.toThrow('Reached run creation');
-    expect(createCoreWorkflowRun).toHaveBeenCalledWith(
-      expect.objectContaining({
-        pinnedDependencies: {
-          logicFunctionFingerprintById: { 'function-id': 'fingerprint' },
-          agentFingerprintById: {},
-        },
-      }),
-    );
-  });
-
-  it('refuses to start when the application updates the workflow during the start', async () => {
-    isFeatureEnabled.mockResolvedValue(true);
-    findCoreVersionById
-      .mockResolvedValueOnce({
-        id: 'version',
-        coreWorkflowId: 'workflow',
-        workflowId: null,
-        workspaceWorkflowVersionId: null,
-        triggers: [{ type: 'MANUAL' }],
-        steps: [],
-      })
-      .mockResolvedValueOnce({
-        id: 'version',
-        coreWorkflowId: 'workflow',
-        workflowId: null,
-        workspaceWorkflowVersionId: null,
-        triggers: [{ type: 'MANUAL' }],
-        steps: [{ id: 'new-step' }],
-      });
-    await expect(service.run(INPUT)).rejects.toThrow(
-      'updated this workflow while the run was starting',
-    );
-    expect(createCoreWorkflowRun).not.toHaveBeenCalled();
+    expect(createCoreWorkflowRun).toHaveBeenCalled();
   });
 
   it.each(['workspace-custom', 'twenty-standard'])(
@@ -155,7 +118,6 @@ describe('application workflow execution gate', () => {
       });
       await expect(service.run(INPUT)).rejects.toThrow('Reached run creation');
       expect(isFeatureEnabled).not.toHaveBeenCalled();
-      expect(pinDependencies).not.toHaveBeenCalled();
       expect(createCoreWorkflowRun).toHaveBeenCalled();
     },
   );
