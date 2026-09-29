@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { type ActorMetadata, FeatureFlagKey } from 'twenty-shared/types';
-import { FeatureFlagService } from 'src/engine/core-modules/feature-flag/services/feature-flag.service';
+import { type ActorMetadata } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 import isEqual from 'lodash.isequal';
 
@@ -45,7 +44,6 @@ export class CoreWorkflowRunnerService {
     private readonly billingUsageService: BillingUsageService,
     private readonly workflowThrottlingWorkspaceService: WorkflowThrottlingWorkspaceService,
     private readonly metricsService: MetricsService,
-    private readonly featureFlagService: FeatureFlagService,
     private readonly applicationService: ApplicationService,
     private readonly workflowRunPinnedDependenciesService: WorkflowRunPinnedDependenciesService,
     @InjectMessageQueue(MessageQueue.workflowQueue)
@@ -117,19 +115,6 @@ export class CoreWorkflowRunnerService {
     const isApplicationWorkflow =
       workflow.applicationId !== workspaceCustomFlatApplication.id &&
       workflow.applicationId !== twentyStandardFlatApplication.id;
-
-    if (
-      isApplicationWorkflow &&
-      !(await this.featureFlagService.isFeatureEnabled(
-        FeatureFlagKey.IS_APPLICATION_WORKFLOWS_ENABLED,
-        workspaceId,
-      ))
-    ) {
-      throw new WorkflowRunException(
-        'Application workflows are not enabled for this workspace',
-        WorkflowRunExceptionCode.WORKFLOW_RUN_INVALID,
-      );
-    }
 
     const pinnedDependencies = isApplicationWorkflow
       ? await this.pinApplicationWorkflowDependencies({

@@ -1,9 +1,9 @@
-import { FeatureFlagModule } from 'src/engine/core-modules/feature-flag/feature-flag.module';
 import { Module } from '@nestjs/common';
-import { ApplicationModule } from 'src/engine/core-modules/application/application.module';
 
+import { ApplicationModule } from 'src/engine/core-modules/application/application.module';
 import { BillingModule } from 'src/engine/core-modules/billing/billing.module';
 import { MetricsModule } from 'src/engine/core-modules/metrics/metrics.module';
+import { InputAskModule } from 'src/modules/input-ask/input-ask.module';
 import { WorkflowCommonModule } from 'src/modules/workflow/common/workflow-common.module';
 import { CodeStepBuildModule } from 'src/modules/workflow/workflow-builder/workflow-version-step/code-step/code-step-build.module';
 import { WorkflowVersionStepModule } from 'src/modules/workflow/workflow-builder/workflow-version-step/workflow-version-step.module';
@@ -21,7 +21,6 @@ import { ApplicationWorkflowLifecycleModule } from 'src/modules/workflow/applica
   imports: [
     ApplicationModule,
     ApplicationWorkflowLifecycleModule,
-    FeatureFlagModule,
     WorkflowCommonModule,
     WorkflowExecutorModule,
     BillingModule,
@@ -32,6 +31,7 @@ import { ApplicationWorkflowLifecycleModule } from 'src/modules/workflow/applica
     CodeStepBuildModule,
     WorkflowCoreModule,
     WorkflowVersionCoreModule,
+    InputAskModule,
   ],
   providers: [
     WorkflowRunnerWorkspaceService,
