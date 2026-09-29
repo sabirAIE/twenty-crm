@@ -1,23 +1,26 @@
-import { type AgentEntity } from 'src/engine/metadata-modules/ai/ai-agent/entities/agent.entity';
-import { type LogicFunctionEntity } from 'src/engine/metadata-modules/logic-function/logic-function.entity';
+import { LogicFunctionRuntime } from 'src/engine/metadata-modules/logic-function/logic-function.entity';
 import { computeWorkflowRunPinnedDependencies } from 'src/modules/workflow/application-workflow-lifecycle/utils/compute-workflow-run-pinned-dependencies.util';
 import { hasPinnedDependencyChanged } from 'src/modules/workflow/application-workflow-lifecycle/utils/has-pinned-dependency-changed.util';
 
-const greet = {
+type PinnedDependencyRows = Parameters<
+  typeof computeWorkflowRunPinnedDependencies
+>[0];
+
+const greet: PinnedDependencyRows['logicFunctions'][number] = {
   id: 'greet-id',
   checksum: 'checksum-1',
   handlerName: 'main',
-  runtime: 'nodejs22.x',
+  runtime: LogicFunctionRuntime.NODE22,
   workflowActionTriggerSettings: {},
-} as unknown as LogicFunctionEntity;
+};
 
-const summarizer = {
+const summarizer: PinnedDependencyRows['agents'][number] = {
   id: 'summarizer-id',
   prompt: 'You summarize',
   modelId: 'auto',
   responseFormat: { type: 'text' },
   modelConfiguration: null,
-} as unknown as AgentEntity;
+};
 
 const pinnedDependencies = computeWorkflowRunPinnedDependencies({
   logicFunctions: [greet],
@@ -58,9 +61,7 @@ describe('workflow run pinned dependencies', () => {
         dependencies,
         pinnedDependencies,
         currentDependencies: computeWorkflowRunPinnedDependencies({
-          logicFunctions: [
-            { ...greet, checksum: 'checksum-2' } as LogicFunctionEntity,
-          ],
+          logicFunctions: [{ ...greet, checksum: 'checksum-2' }],
           agents: [summarizer],
         }),
       }),
@@ -87,7 +88,7 @@ describe('workflow run pinned dependencies', () => {
         pinnedDependencies,
         currentDependencies: computeWorkflowRunPinnedDependencies({
           logicFunctions: [greet],
-          agents: [{ ...summarizer, prompt: 'You translate' } as AgentEntity],
+          agents: [{ ...summarizer, prompt: 'You translate' }],
         }),
       }),
     ).toBe(true);

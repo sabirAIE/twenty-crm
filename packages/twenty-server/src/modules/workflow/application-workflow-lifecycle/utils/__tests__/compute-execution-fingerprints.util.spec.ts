@@ -1,21 +1,34 @@
+import { LogicFunctionRuntime } from 'src/engine/metadata-modules/logic-function/logic-function.entity';
 import { computeAgentExecutionFingerprint } from 'src/modules/workflow/application-workflow-lifecycle/utils/compute-agent-execution-fingerprint.util';
 import { computeLogicFunctionExecutionFingerprint } from 'src/modules/workflow/application-workflow-lifecycle/utils/compute-logic-function-execution-fingerprint.util';
-import { type FlatAgent } from 'src/engine/metadata-modules/flat-agent/types/flat-agent.type';
-import { type FlatLogicFunction } from 'src/engine/metadata-modules/logic-function/types/flat-logic-function.type';
 
-const logicFunction = {
+type LogicFunctionFixture = Parameters<
+  typeof computeLogicFunctionExecutionFingerprint
+>[0];
+type AgentFixture = Parameters<typeof computeAgentExecutionFingerprint>[0];
+
+const logicFunction: LogicFunctionFixture = {
   checksum: 'checksum-1',
   handlerName: 'main',
-  runtime: 'nodejs22.x',
-  workflowActionTriggerSettings: { inputSchema: [], outputSchema: {} },
-} as unknown as FlatLogicFunction;
+  runtime: LogicFunctionRuntime.NODE22,
+  workflowActionTriggerSettings: { label: 'Greet' },
+};
 
-const agent = {
+const agent: AgentFixture = {
   prompt: 'You summarize',
   modelId: 'auto',
-  responseFormat: { type: 'json', schema: { a: 1, b: 2 } },
+  responseFormat: {
+    type: 'json',
+    schema: {
+      type: 'object',
+      properties: {
+        summary: { type: 'string' },
+        score: { type: 'number' },
+      },
+    },
+  },
   modelConfiguration: null,
-} as unknown as FlatAgent;
+};
 
 describe('computeLogicFunctionExecutionFingerprint', () => {
   it('changes with the built code', () => {
@@ -37,13 +50,15 @@ describe('computeLogicFunctionExecutionFingerprint', () => {
   });
 
   it('ignores properties that do not change the executed code', () => {
+    const renamedLogicFunction = {
+      ...logicFunction,
+      name: 'renamed',
+      timeoutSeconds: 30,
+      workflowActionTriggerSettings: { label: 'Say hello' },
+    };
+
     expect(computeLogicFunctionExecutionFingerprint(logicFunction)).toBe(
-      computeLogicFunctionExecutionFingerprint({
-        ...logicFunction,
-        name: 'renamed',
-        timeoutSeconds: 30,
-        workflowActionTriggerSettings: { inputSchema: [{ name: 'x' }] },
-      } as unknown as FlatLogicFunction),
+      computeLogicFunctionExecutionFingerprint(renamedLogicFunction),
     );
   });
 });
@@ -59,27 +74,25 @@ describe('computeAgentExecutionFingerprint', () => {
     expect(computeAgentExecutionFingerprint(agent)).toBe(
       computeAgentExecutionFingerprint({
         ...agent,
-        responseFormat: { schema: { b: 2, a: 1 }, type: 'json' },
-      } as unknown as FlatAgent),
-    );
-  });
-
-  it('treats a missing model configuration like an empty one', () => {
-    expect(computeAgentExecutionFingerprint(agent)).toBe(
-      computeAgentExecutionFingerprint({
-        ...agent,
-        modelConfiguration: undefined,
-      } as unknown as FlatAgent),
+        responseFormat: {
+          schema: {
+            properties: {
+              score: { type: 'number' },
+              summary: { type: 'string' },
+            },
+            type: 'object',
+          },
+          type: 'json',
+        },
+      }),
     );
   });
 
   it('ignores the label and role', () => {
+    const relabeledAgent = { ...agent, label: 'Renamed', roleId: 'role-2' };
+
     expect(computeAgentExecutionFingerprint(agent)).toBe(
-      computeAgentExecutionFingerprint({
-        ...agent,
-        label: 'Renamed',
-        roleId: 'role-2',
-      } as unknown as FlatAgent),
+      computeAgentExecutionFingerprint(relabeledAgent),
     );
   });
 });
