@@ -98,18 +98,32 @@ For `IF_ELSE`, each branch's `nextStepIds` identifies its entry steps. For `ITER
 
 Synchronization creates one ACTIVE version. Changing the source updates that same version without allocating another workflow or version ID. Keep both universal identifiers stable across releases.
 
-Existing runs retain the graph saved when they started, including their step inputs and edges. Function implementations are not pinned: a step executed after an upgrade uses the current function implementation. Keep functions needed by existing runs available.
+Existing runs keep the graph saved when they started, including their step inputs and edges. When a run starts, Twenty also records the built code of each function and the prompt, model and response format of each agent its steps use. A step runs only if these are unchanged; otherwise it fails and asks for a new run. Roles, credentials and connected accounts are not recorded: every step runs with the permissions that apply at that moment.
+
+An update is rejected while runs in progress still need something it changes or removes:
+
+- a function whose built code, handler, runtime or workflow-action exposure changes;
+- an agent whose prompt, model, response format or model configuration changes;
+- a function, an agent or a workflow that the update removes.
+
+The error names each workflow and how many of its runs are affected. Wait for these runs to finish or stop them, then apply the update again. Runs in progress are those not started, queued or running, including runs waiting on a delay, a form or an automatic retry. Changes to the graph, and changes to steps that every run in progress has already passed, are accepted. Failed runs do not block updates; retrying one after such an update fails at the changed step.
+
+Updates are checked before new files replace the installed ones: `twenty app:install` validates the whole upgrade first, and `twenty apply` computes the plan first unless `--force` is used. `twenty dev` uploads files as they change, so use it only on workflows without runs you care about.
+
+Removing a workflow from the manifest deletes its definition once none of its runs is in progress. Completed, failed and stopped runs keep their saved graph and stay in the runs list, subject to the usual run cleanup.
+
+Uninstalling the application stops its runs in progress, then removes its workflows, functions and agents. Past runs remain in the runs list.
 
 Installed app workflows are read-only in the normal workflow editor and APIs. Open the workflow show page and click Run to start a run. Change the app source and sync to update the definition.
 
 ## POC boundaries
 
-Removing a workflow from a full manifest sync, replacing its version universal identifier, and adopting a workspace-owned workflow are rejected. Additive pre-install synchronization can omit existing workflows.
+Replacing a workflow's version universal identifier and adopting a workspace-owned workflow are rejected. Additive pre-install synchronization can omit existing workflows.
 
-Automated triggers, command-menu registration, duplication, export/pull, uninstall safety, execution-dependency pinning, application execution permissions and production rollback support remain separate work. Existing workspace-owned workflow APIs and rollback mirrors retain their current lifecycle.
+Automated triggers, command-menu registration, duplication, export/pull, application execution permissions and production rollback support remain separate work. Existing workspace-owned workflow APIs and rollback mirrors retain their current lifecycle.
 
 
-Application workflows are experimental. Enable `IS_APPLICATION_WORKFLOWS_ENABLED` to install or update workflow definitions and start new runs, and enable `IS_WORKFLOW_CORE_INDEX_PAGE_ENABLED` for the core workflow UI. Both flags default off unless configured. Disabling the application-workflow flag blocks installation/updates containing workflows and hides Run; it does not delete definitions or interrupt already-started runs. The older workspace UI cannot display these core-only definitions. Execution permissions, uninstall safety and dependency pinning remain outside this POC.
+Application workflows are experimental. Enable `IS_APPLICATION_WORKFLOWS_ENABLED` to install or update workflow definitions and start new runs, and enable `IS_WORKFLOW_CORE_INDEX_PAGE_ENABLED` for the core workflow UI. Both flags default off unless configured. Disabling the application-workflow flag blocks installation/updates containing workflows and hides Run; it does not delete definitions or interrupt already-started runs, which finish with the definitions they started with. Removing workflows and uninstalling the application still work while the flag is off. The older workspace UI cannot display these core-only definitions.
 
 Output schemas are populated during installation without executing steps. Explicit step `outputSchema` takes precedence. CODE and LOGIC_FUNCTION steps can reuse the referenced function's `workflowActionTriggerSettings.outputSchema`; otherwise provide an `expectedOutputSchema` containing a representative result. HTTP_REQUEST also uses `expectedOutputSchema`. AI_AGENT uses the referenced agent's response format. Arbitrary code and HTTP response shapes cannot be inferred without an output declaration. Keep declarations in sync with the implementation.
 

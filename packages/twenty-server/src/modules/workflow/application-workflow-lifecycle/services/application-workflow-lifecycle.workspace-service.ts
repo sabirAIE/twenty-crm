@@ -86,7 +86,9 @@ export class ApplicationWorkflowLifecycleWorkspaceService {
 
     const conflictDescriptions = conflicts.map(
       ({ workflowName, workflowRunCount, blockedChanges }) =>
-        `workflow "${workflowName}" has ${workflowRunCount} run${workflowRunCount === 1 ? '' : 's'} in progress that still need ${blockedChanges.join(' and ')}`,
+        workflowRunCount === 1
+          ? `workflow "${workflowName}" has 1 run in progress that still needs ${blockedChanges.join(' and ')}`
+          : `workflow "${workflowName}" has ${workflowRunCount} runs in progress that still need ${blockedChanges.join(' and ')}`,
     );
 
     throw new ApplicationException(

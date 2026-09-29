@@ -1,100 +1,36 @@
-import { WorkflowActionType } from 'twenty-shared/workflow';
-
-import { type AllFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/types/all-flat-entity-maps.type';
+import { type AgentEntity } from 'src/engine/metadata-modules/ai/ai-agent/entities/agent.entity';
+import { type LogicFunctionEntity } from 'src/engine/metadata-modules/logic-function/logic-function.entity';
 import { computeWorkflowRunPinnedDependencies } from 'src/modules/workflow/application-workflow-lifecycle/utils/compute-workflow-run-pinned-dependencies.util';
-import { hasWorkflowStepPinnedDependencyChanged } from 'src/modules/workflow/application-workflow-lifecycle/utils/has-workflow-step-pinned-dependency-changed.util';
-import { type WorkflowAction } from 'src/modules/workflow/workflow-executor/workflow-actions/types/workflow-action.type';
+import { hasPinnedDependencyChanged } from 'src/modules/workflow/application-workflow-lifecycle/utils/has-pinned-dependency-changed.util';
 
 const greet = {
   id: 'greet-id',
-  universalIdentifier: 'greet-uid',
   checksum: 'checksum-1',
   handlerName: 'main',
   runtime: 'nodejs22.x',
   workflowActionTriggerSettings: {},
-  deletedAt: null,
-};
+} as unknown as LogicFunctionEntity;
 
 const summarizer = {
   id: 'summarizer-id',
-  universalIdentifier: 'summarizer-uid',
   prompt: 'You summarize',
   modelId: 'auto',
   responseFormat: { type: 'text' },
   modelConfiguration: null,
-  deletedAt: null,
+} as unknown as AgentEntity;
+
+const pinnedDependencies = computeWorkflowRunPinnedDependencies({
+  logicFunctions: [greet],
+  agents: [summarizer],
+});
+
+const dependencies = {
+  logicFunctionIds: ['greet-id'],
+  agentIds: ['summarizer-id'],
 };
 
-const buildMaps = ({
-  logicFunctions = [greet],
-  agents = [summarizer],
-}: {
-  logicFunctions?: Record<string, unknown>[];
-  agents?: Record<string, unknown>[];
-} = {}) =>
-  ({
-    flatLogicFunctionMaps: {
-      byUniversalIdentifier: Object.fromEntries(
-        logicFunctions.map((logicFunction) => [
-          logicFunction.universalIdentifier,
-          logicFunction,
-        ]),
-      ),
-      universalIdentifierById: Object.fromEntries(
-        logicFunctions.map((logicFunction) => [
-          logicFunction.id,
-          logicFunction.universalIdentifier,
-        ]),
-      ),
-      universalIdentifiersByApplicationId: {},
-    },
-    flatAgentMaps: {
-      byUniversalIdentifier: Object.fromEntries(
-        agents.map((agent) => [agent.universalIdentifier, agent]),
-      ),
-      universalIdentifierById: Object.fromEntries(
-        agents.map((agent) => [agent.id, agent.universalIdentifier]),
-      ),
-      universalIdentifiersByApplicationId: {},
-    },
-  }) as unknown as Pick<
-    AllFlatEntityMaps,
-    'flatLogicFunctionMaps' | 'flatAgentMaps'
-  >;
-
-const greetStep = {
-  id: 'greet',
-  name: 'Greet',
-  type: WorkflowActionType.LOGIC_FUNCTION,
-  valid: true,
-  nextStepIds: ['summarize'],
-  settings: {
-    input: { logicFunctionId: 'greet-id', logicFunctionInput: {} },
-    outputSchema: {},
-    errorHandlingOptions: {},
-  },
-} as unknown as WorkflowAction;
-
-const summarizeStep = {
-  id: 'summarize',
-  name: 'Summarize',
-  type: WorkflowActionType.AI_AGENT,
-  valid: true,
-  nextStepIds: [],
-  settings: {
-    input: { agentId: 'summarizer-id', prompt: 'Summarize' },
-    outputSchema: {},
-    errorHandlingOptions: {},
-  },
-} as unknown as WorkflowAction;
-
 describe('workflow run pinned dependencies', () => {
-  const pinnedDependencies = computeWorkflowRunPinnedDependencies({
-    steps: [greetStep, summarizeStep],
-    ...buildMaps(),
-  });
-
-  it('pins every function and agent the run references', () => {
+  it('pins every function and agent it is given by id', () => {
     expect(
       Object.keys(pinnedDependencies.logicFunctionFingerprintById),
     ).toEqual(['greet-id']);
@@ -103,60 +39,83 @@ describe('workflow run pinned dependencies', () => {
     ]);
   });
 
-  it('accepts a step whose definitions did not change', () => {
+  it('accepts definitions that did not change', () => {
     expect(
-      hasWorkflowStepPinnedDependencyChanged({
-        step: greetStep,
+      hasPinnedDependencyChanged({
+        dependencies,
         pinnedDependencies,
-        ...buildMaps(),
+        currentDependencies: computeWorkflowRunPinnedDependencies({
+          logicFunctions: [greet],
+          agents: [summarizer],
+        }),
       }),
     ).toBe(false);
   });
 
-  it('rejects a step whose function was rebuilt after the run started', () => {
+  it('rejects a function rebuilt after the run started', () => {
     expect(
-      hasWorkflowStepPinnedDependencyChanged({
-        step: greetStep,
+      hasPinnedDependencyChanged({
+        dependencies,
         pinnedDependencies,
-        ...buildMaps({
-          logicFunctions: [{ ...greet, checksum: 'checksum-2' }],
+        currentDependencies: computeWorkflowRunPinnedDependencies({
+          logicFunctions: [
+            { ...greet, checksum: 'checksum-2' } as LogicFunctionEntity,
+          ],
+          agents: [summarizer],
         }),
       }),
     ).toBe(true);
   });
 
-  it('rejects a step whose function was removed', () => {
+  it('rejects a removed function', () => {
     expect(
-      hasWorkflowStepPinnedDependencyChanged({
-        step: greetStep,
+      hasPinnedDependencyChanged({
+        dependencies,
         pinnedDependencies,
-        ...buildMaps({ logicFunctions: [] }),
-      }),
-    ).toBe(true);
-  });
-
-  it('rejects a step whose agent prompt changed', () => {
-    expect(
-      hasWorkflowStepPinnedDependencyChanged({
-        step: summarizeStep,
-        pinnedDependencies,
-        ...buildMaps({
-          agents: [{ ...summarizer, prompt: 'You translate' }],
+        currentDependencies: computeWorkflowRunPinnedDependencies({
+          logicFunctions: [],
+          agents: [summarizer],
         }),
       }),
     ).toBe(true);
   });
 
-  it('rejects a function that was not pinned when the run started', () => {
+  it('rejects an agent whose prompt changed', () => {
     expect(
-      hasWorkflowStepPinnedDependencyChanged({
-        step: greetStep,
+      hasPinnedDependencyChanged({
+        dependencies,
+        pinnedDependencies,
+        currentDependencies: computeWorkflowRunPinnedDependencies({
+          logicFunctions: [greet],
+          agents: [{ ...summarizer, prompt: 'You translate' } as AgentEntity],
+        }),
+      }),
+    ).toBe(true);
+  });
+
+  it('rejects a dependency that was not pinned when the run started', () => {
+    expect(
+      hasPinnedDependencyChanged({
+        dependencies,
         pinnedDependencies: {
           logicFunctionFingerprintById: {},
           agentFingerprintById: {},
         },
-        ...buildMaps(),
+        currentDependencies: pinnedDependencies,
       }),
     ).toBe(true);
+  });
+
+  it('ignores dependencies the step does not use', () => {
+    expect(
+      hasPinnedDependencyChanged({
+        dependencies: { logicFunctionIds: [], agentIds: [] },
+        pinnedDependencies,
+        currentDependencies: computeWorkflowRunPinnedDependencies({
+          logicFunctions: [],
+          agents: [],
+        }),
+      }),
+    ).toBe(false);
   });
 });
