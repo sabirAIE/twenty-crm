@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { type Manifest } from 'twenty-shared/application';
-import { FeatureFlagKey } from 'twenty-shared/types';
+import { FeatureFlagKey, FieldMetadataType } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 import { buildBaseManifest } from 'test/integration/metadata/suites/application/utils/build-base-manifest.util';
 import { cleanupApplicationAndAppRegistration } from 'test/integration/metadata/suites/application/utils/cleanup-application-and-app-registration.util';
@@ -74,7 +74,7 @@ const buildManifest = ({
                         id: randomUUID(),
                         name: 'greeting',
                         label: 'Greeting',
-                        type: 'TEXT',
+                        type: FieldMetadataType.TEXT,
                       },
                     ],
                     nextStepIds: [GREET_STEP_ID],
