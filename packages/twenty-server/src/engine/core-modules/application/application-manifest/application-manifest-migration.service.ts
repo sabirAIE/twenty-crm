@@ -235,34 +235,49 @@ export class ApplicationManifestMigrationService {
       now,
     });
 
-    const allFlatEntityOperationRecordByMetadataName =
-      addDeletedWorkflowVersionsToOperationRecord({
+    const { workspaceCustomFlatApplication, twentyStandardFlatApplication } =
+      await this.applicationService.findWorkspaceTwentyStandardAndCustomApplicationOrThrow(
+        { workspaceId },
+      );
+
+    const isInstalledApplication =
+      ownerFlatApplication.id !== workspaceCustomFlatApplication.id &&
+      ownerFlatApplication.id !== twentyStandardFlatApplication.id;
+
+    const manifestOperationRecordByMetadataName =
+      buildAllFlatEntityOperationRecordByMetadataNameFromFromTo({
         fromAllFlatEntityMaps,
-        allFlatEntityOperationRecordByMetadataName:
-          buildAllFlatEntityOperationRecordByMetadataNameFromFromTo({
-            fromAllFlatEntityMaps,
-            toAllUniversalFlatEntityMaps,
-            buildOptions: {
-              isSystemBuild: false,
-              inferDeletionFromMissingEntities: inferDeletionFromMissingEntities
-                ? true
-                : undefined,
-              applicationUniversalIdentifier:
-                ownerFlatApplication.universalIdentifier,
-            },
-          }),
+        toAllUniversalFlatEntityMaps,
+        buildOptions: {
+          isSystemBuild: false,
+          inferDeletionFromMissingEntities: inferDeletionFromMissingEntities
+            ? true
+            : undefined,
+          applicationUniversalIdentifier:
+            ownerFlatApplication.universalIdentifier,
+        },
       });
 
-    await this.applicationWorkflowLifecycleWorkspaceService.assertUpdateKeepsInProgressRunsExecutable(
-      {
-        workspaceId,
-        applicationName: ownerFlatApplication.name,
-        fromAllFlatEntityMaps,
-        flatEntityOperationRecordByMetadataName:
-          allFlatEntityOperationRecordByMetadataName,
-        dryRun,
-      },
-    );
+    const allFlatEntityOperationRecordByMetadataName = isInstalledApplication
+      ? addDeletedWorkflowVersionsToOperationRecord({
+          fromAllFlatEntityMaps,
+          allFlatEntityOperationRecordByMetadataName:
+            manifestOperationRecordByMetadataName,
+        })
+      : manifestOperationRecordByMetadataName;
+
+    if (isInstalledApplication) {
+      await this.applicationWorkflowLifecycleWorkspaceService.assertUpdateKeepsInProgressRunsExecutable(
+        {
+          workspaceId,
+          applicationName: ownerFlatApplication.name,
+          fromAllFlatEntityMaps,
+          flatEntityOperationRecordByMetadataName:
+            allFlatEntityOperationRecordByMetadataName,
+          dryRun,
+        },
+      );
+    }
 
     const validateBuildRunStart = performance.now();
     const validateAndBuildResult =
