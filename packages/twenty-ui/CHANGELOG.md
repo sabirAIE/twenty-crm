@@ -34,12 +34,15 @@ Keep `twenty-ui`, `twenty-sdk`, and `twenty-client-sdk` versions aligned when up
 ### Fixed
 
 - Reading-direction spacing, JSON disclosure arrows, theme picker corners, avatar overlap, and the Dropdown Back chevron now follow RTL layouts. Menu, Popover, Tooltip, Select, Dialog, AlertDialog, and Toaster portals set the `TextDirectionProvider` direction as `dir`, and inherit their container's direction when no provider is present. Pair the provider with the matching HTML `dir` attribute.
+- Entering a `Dropdown.Page` without a search focuses its first row instead of `Dropdown.Back`, so Enter activates the first option rather than navigating back.
 
 ### Added
 
 - `Callout.closeLabel` customizes the dismiss button name. `ListItem`, `Menu` items, and `Dropdown` items accept `hotkeysJoinLabel` (default `then`); the legacy `MenuItem` uses `hotKeysJoinLabel`.
 
 - `twenty-ui/utilities` exports `useMediaQuery`, `MOBILE_MEDIA_QUERY`, and `TOUCH_DEVICE_MEDIA_QUERY`. `twenty-ui/testing` exports `overrideMediaQueryMatches`.
+
+- `Dropdown.OptionItem` makes `selected` optional. Omit it for options that navigate or apply without a selection state: the row then exposes no `aria-pressed` or `aria-checked`, uses the `menuitem` role in menus, and shows no indicator by default.
 
 ### Fixed
 
