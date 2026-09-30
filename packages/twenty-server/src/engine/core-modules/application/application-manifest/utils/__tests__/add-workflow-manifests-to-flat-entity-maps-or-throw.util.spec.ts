@@ -1,5 +1,6 @@
 import { type UniversalFlatWorkflow } from 'src/engine/workspace-manager/workspace-migration/universal-flat-entity/types/universal-flat-workflow.type';
 import { type FlatWorkflowVersion } from 'src/engine/metadata-modules/flat-workflow-version/types/flat-workflow-version.type';
+import { type FlatObjectMetadata } from 'src/engine/metadata-modules/flat-object-metadata/types/flat-object-metadata.type';
 import { addWorkflowManifestsToFlatEntityMapsOrThrow } from 'src/engine/core-modules/application/application-manifest/utils/add-workflow-manifests-to-flat-entity-maps-or-throw.util';
 import { isDefined } from 'twenty-shared/utils';
 
@@ -50,6 +51,7 @@ describe('application workflow installation gate', () => {
           fromAllFlatEntityMaps: createEmptyAllFlatEntityMaps(),
           toAllUniversalFlatEntityMaps: createEmptyAllFlatEntityMaps(),
           existingAllFlatEntityMaps: createEmptyAllFlatEntityMaps(),
+          idByUniversalIdentifierByMetadataName: {},
           isApplicationWorkflowsEnabled,
           now: '2026-09-28T00:00:00.000Z',
         }),
@@ -84,6 +86,7 @@ const compute = ({
     fromAllFlatEntityMaps,
     toAllUniversalFlatEntityMaps,
     existingAllFlatEntityMaps: fromAllFlatEntityMaps,
+    idByUniversalIdentifierByMetadataName: {},
     isApplicationWorkflowsEnabled: true,
     now: '2026-09-28T00:00:00.000Z',
   });
@@ -148,5 +151,40 @@ describe('application workflow manifest updates', () => {
       compute({ workflows: [], fromAllFlatEntityMaps: compute() })
         .flatWorkflowMaps.byUniversalIdentifier,
     ).toEqual({});
+  });
+
+  it('rejects unknown record fields and update selections in one error', () => {
+    const objectUniversalIdentifier = '88888888-8888-4888-8888-888888888888';
+    const existing = createEmptyAllFlatEntityMaps();
+    existing.flatObjectMetadataMaps.byUniversalIdentifier[
+      objectUniversalIdentifier
+    ] = {
+      universalIdentifier: objectUniversalIdentifier,
+      applicationId: '99999999-9999-4999-8999-999999999999',
+      nameSingular: 'company',
+    } as FlatObjectMetadata;
+    const workflows = structuredClone(MANIFEST.workflows ?? []);
+    const workflow = workflows[0];
+    if (!isDefined(workflow)) {
+      throw new Error('Expected workflow');
+    }
+    workflow.version.steps = [
+      {
+        universalIdentifier: '66666666-6666-4666-8666-666666666666',
+        name: 'Update',
+        type: 'UPDATE_RECORD',
+        nextStepIds: [],
+        input: {
+          objectUniversalIdentifier,
+          objectRecordId: 'record',
+          objectRecord: { missing: true },
+          fieldsToUpdate: ['missing'],
+        },
+      },
+    ];
+
+    expect(() =>
+      compute({ workflows, fromAllFlatEntityMaps: existing }),
+    ).toThrow(/unknown record field missing.*fieldsToUpdate/);
   });
 });
