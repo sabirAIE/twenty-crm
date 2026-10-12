@@ -1,3 +1,5 @@
+/* @license Enterprise */
+
 import { type ValidationRuleBindings } from 'twenty-shared/types';
 import {
   isDefined,
@@ -147,7 +149,7 @@ export const computeValidationRuleAfterFieldChanges = <
     );
   const shouldDetachErrorField = fieldChanges.some(
     (fieldChange) =>
-      fieldChange.shouldDetachErrorField &&
+      fieldChange.isDeleted &&
       validationRule.errorFieldMetadataUniversalIdentifier ===
         fieldChange.fieldUniversalIdentifier,
   );

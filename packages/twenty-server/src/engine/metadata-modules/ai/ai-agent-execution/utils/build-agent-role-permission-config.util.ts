@@ -4,14 +4,19 @@ import { type RolePermissionConfig } from 'src/engine/twenty-orm/types/role-perm
 
 export const buildAgentRolePermissionConfig = ({
   agentRoleId,
-  runAsRoleId,
+  additionalRoleRestrictionIds = [],
 }: {
-  agentRoleId: string;
-  runAsRoleId?: string;
+  agentRoleId: string | undefined;
+  additionalRoleRestrictionIds?: string[];
 }): RolePermissionConfig => {
-  if (isDefined(runAsRoleId)) {
-    return { intersectionOf: [runAsRoleId] };
+  // without a role the agent reads nothing, however its restrictions narrow it
+  if (!isDefined(agentRoleId)) {
+    return { intersectionOf: [] };
   }
 
-  return { intersectionOf: [agentRoleId] };
+  return {
+    intersectionOf: [
+      ...new Set([agentRoleId, ...additionalRoleRestrictionIds]),
+    ],
+  };
 };

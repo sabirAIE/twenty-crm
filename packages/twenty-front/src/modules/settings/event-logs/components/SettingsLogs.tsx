@@ -15,6 +15,7 @@ import { useEventLogsLiveStream } from '@/settings/event-logs/hooks/useEventLogs
 import { useEventLogs } from '@/settings/event-logs/hooks/useQueryEventLogs';
 import { type EventLogFiltersState } from '@/settings/event-logs/types/EventLogFiltersState';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { checkIfBillingEntitlementIsEnabledOnWorkspace } from '@/workspace/utils/checkIfBillingEntitlementIsEnabledOnWorkspace';
 import { SettingsPath } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 import {
@@ -24,7 +25,7 @@ import {
   IconPlayerPlay,
 } from 'twenty-ui/icon';
 import { Button } from 'twenty-ui/primitives/input';
-import { IconButton } from 'twenty-ui/components';
+import { IconButton } from 'twenty-ui/components/input';
 import { Card } from 'twenty-ui/primitives/surfaces';
 import { themeCssVariables } from 'twenty-ui/theme';
 
@@ -99,12 +100,10 @@ export const SettingsLogs = () => {
   const navigateSettings = useNavigateSettings();
 
   const isBillingEnabled = billing?.isBillingEnabled ?? false;
-  const hasAuditLogsEntitlement =
-    currentWorkspace?.billingEntitlements?.some(
-      (entitlement) =>
-        entitlement.key === BillingEntitlementKey.AUDIT_LOGS &&
-        entitlement.value,
-    ) === true;
+  const hasAuditLogsEntitlement = checkIfBillingEntitlementIsEnabledOnWorkspace(
+    BillingEntitlementKey.AUDIT_LOGS,
+    currentWorkspace,
+  );
 
   const [selectedTable, setSelectedTable] = useState<EventLogTable>(
     EventLogTable.PAGEVIEW,
@@ -112,9 +111,12 @@ export const SettingsLogs = () => {
   const [filters, setFilters] = useState<EventLogFiltersState>({});
   const [isPaused, setIsPaused] = useState(false);
 
-  const isApplicationLog = selectedTable === EventLogTable.APPLICATION_LOG;
+  const isAvailableOnEveryPlan =
+    selectedTable === EventLogTable.APPLICATION_LOG ||
+    selectedTable === EventLogTable.OBJECT_EVENT;
   const canQuery =
-    isClickHouseConfigured && (isApplicationLog || hasAuditLogsEntitlement);
+    isClickHouseConfigured &&
+    (isAvailableOnEveryPlan || hasAuditLogsEntitlement);
 
   const { records, totalCount, hasNextPage, loading, error, loadMore } =
     useEventLogs(
@@ -169,7 +171,7 @@ export const SettingsLogs = () => {
       <SettingsOptionCardContentButton
         Icon={IconLock}
         title={t`Upgrade to access audit logs`}
-        description={t`Only application logs are available on your current plan. Other log types require an Organization subscription.`}
+        description={t`Record changes and app logs are available on your current plan. Other log types require an Organization subscription.`}
         Button={
           <Button
             size="sm"
@@ -190,7 +192,7 @@ export const SettingsLogs = () => {
   );
 
   const renderResults = () => {
-    if (!isApplicationLog && !hasAuditLogsEntitlement) {
+    if (!isAvailableOnEveryPlan && !hasAuditLogsEntitlement) {
       return renderUpgradeCard();
     }
 

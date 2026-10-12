@@ -1,3 +1,5 @@
+/* @license Enterprise */
+
 import { type ValidationRuleFieldChange } from 'src/engine/metadata-modules/validation-rule/types/validation-rule-field-change.type';
 import { computeValidationRuleAfterFieldChanges } from 'src/engine/metadata-modules/validation-rule/utils/compute-validation-rule-after-field-changes.util';
 
@@ -35,7 +37,7 @@ const rename = (
   fieldUniversalIdentifier,
   newFieldName,
   shouldDisableRulesReadingField: false,
-  shouldDetachErrorField: false,
+  isDeleted: false,
 });
 
 const deletion = (
@@ -44,7 +46,7 @@ const deletion = (
   fieldUniversalIdentifier,
   newFieldName: null,
   shouldDisableRulesReadingField: true,
-  shouldDetachErrorField: true,
+  isDeleted: true,
 });
 
 describe('computeValidationRuleAfterFieldChanges', () => {

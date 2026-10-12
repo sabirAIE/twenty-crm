@@ -1,3 +1,5 @@
+/* @license Enterprise */
+
 import { type FieldMetadataType } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 
@@ -42,7 +44,7 @@ export const computeValidationRuleFieldChanges = ({
         fieldUniversalIdentifier: updatedField.universalIdentifier,
         newFieldName: isRenamed ? updatedField.name : null,
         shouldDisableRulesReadingField: isRetyped || isDeactivated,
-        shouldDetachErrorField: isDeactivated,
+        isDeleted: false,
       },
     ];
   }),
@@ -50,6 +52,6 @@ export const computeValidationRuleFieldChanges = ({
     fieldUniversalIdentifier: deletedField.universalIdentifier,
     newFieldName: null,
     shouldDisableRulesReadingField: true,
-    shouldDetachErrorField: true,
+    isDeleted: true,
   })),
 ];

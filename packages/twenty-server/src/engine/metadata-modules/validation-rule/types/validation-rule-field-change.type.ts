@@ -1,6 +1,8 @@
+/* @license Enterprise */
+
 export type ValidationRuleFieldChange = {
   fieldUniversalIdentifier: string;
   newFieldName: string | null;
   shouldDisableRulesReadingField: boolean;
-  shouldDetachErrorField: boolean;
+  isDeleted: boolean;
 };

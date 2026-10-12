@@ -1,3 +1,5 @@
+/* @license Enterprise */
+
 import { FieldMetadataType } from 'twenty-shared/types';
 
 import { computeValidationRuleFieldChanges } from 'src/engine/metadata-modules/validation-rule/utils/compute-validation-rule-field-changes.util';
@@ -38,19 +40,19 @@ describe('computeValidationRuleFieldChanges', () => {
         fieldUniversalIdentifier: AMOUNT.universalIdentifier,
         newFieldName: 'dealValue',
         shouldDisableRulesReadingField: false,
-        shouldDetachErrorField: false,
+        isDeleted: false,
       },
       {
         fieldUniversalIdentifier: STAGE.universalIdentifier,
         newFieldName: null,
         shouldDisableRulesReadingField: true,
-        shouldDetachErrorField: true,
+        isDeleted: false,
       },
       {
         fieldUniversalIdentifier: 'score-universal-identifier',
         newFieldName: null,
         shouldDisableRulesReadingField: true,
-        shouldDetachErrorField: true,
+        isDeleted: true,
       },
     ]);
   });
@@ -68,7 +70,7 @@ describe('computeValidationRuleFieldChanges', () => {
         fieldUniversalIdentifier: STAGE.universalIdentifier,
         newFieldName: null,
         shouldDisableRulesReadingField: true,
-        shouldDetachErrorField: false,
+        isDeleted: false,
       },
     ]);
   });
