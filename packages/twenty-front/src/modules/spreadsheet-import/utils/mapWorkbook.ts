@@ -11,11 +11,13 @@ export const mapWorkbook = (workbook: WorkBook, sheetName?: string) => {
 
   // Clean ZWJ characters from imported CSV data to restore original values
   // This reverses the ZWJ protection applied during export
-  const cleanedData = (data as string[][]).map((row) =>
-    row.map((cell) =>
-      typeof cell === 'string' ? cleanZWJFromImportedValue(cell) : cell,
-    ),
-  );
+  const cleanedData = (data as string[][])
+    .filter((row) => Array.isArray(row))
+    .map((row) =>
+      row.map((cell) =>
+        typeof cell === 'string' ? cleanZWJFromImportedValue(cell) : cell,
+      ),
+    );
 
   return cleanedData;
 };
