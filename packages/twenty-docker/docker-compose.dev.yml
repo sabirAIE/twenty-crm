@@ -1,14 +1,34 @@
-# Development infrastructure services only (Postgres + Redis).
+# Development infrastructure and frontend services (Postgres + Redis + Frontend).
 # Use this when developing locally against the source code.
 #
 # Usage:
 #   docker compose -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.dev.yml up -d --build
 #   docker compose -f docker-compose.dev.yml down       # stop
 #   docker compose -f docker-compose.dev.yml down -v    # stop + wipe data
 
 name: twenty-dev
 
 services:
+  frontend:
+    build:
+      context: ../..
+      dockerfile: packages/twenty-docker/twenty/Dockerfile
+      target: twenty-front
+    ports:
+      - "3000:3000"
+    environment:
+      BACKEND_URL: ${BACKEND_URL:-http://host.docker.internal:3000}
+      REACT_APP_SERVER_BASE_URL: ${REACT_APP_SERVER_BASE_URL:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/healthz || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   db:
     image: postgres:16
     volumes:

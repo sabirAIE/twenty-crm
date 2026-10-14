@@ -202,6 +202,32 @@ USER 1000
 
 
 # ===========================================================================
+# Target: twenty-front (standalone frontend)
+#   docker build --target twenty-front -f packages/twenty-docker/twenty/Dockerfile .
+# ===========================================================================
+
+FROM nginx:alpine AS twenty-front
+
+COPY --from=twenty-front-build /app/packages/twenty-front/build /usr/share/nginx/html
+COPY ./packages/twenty-docker/twenty-front/nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY ./packages/twenty-docker/twenty-front/inject-env.sh /docker-entrypoint.d/40-inject-env.sh
+
+RUN chmod +x /docker-entrypoint.d/40-inject-env.sh
+
+ENV BACKEND_URL=http://host.docker.internal:3000 \
+    PORT=3000 \
+    NGINX_ENVSUBST_FILTER="BACKEND_URL|PORT"
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=5s --timeout=5s --retries=10 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/healthz || exit 1
+
+LABEL org.opencontainers.image.description="Twenty standalone frontend image."
+
+
+
+# ===========================================================================
 # Target: twenty-app-dev (all-in-one with Postgres + Redis + ClickHouse)
 #   docker build --target twenty-app-dev -f packages/twenty-docker/twenty/Dockerfile .
 # ===========================================================================
