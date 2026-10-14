@@ -41,11 +41,11 @@ export const mapPaginatedObjectMetadataItemsToObjectMetadataItems = ({
               ...searchFieldMetadata,
             }) satisfies SearchFieldMetadataItem,
         ),
-        indexMetadatas: indexMetadataList.map(
+        indexMetadatas: (indexMetadataList ?? []).map(
           ({ indexFieldMetadataList: indexFields, ...indexRest }) =>
             ({
               ...indexRest,
-              indexFieldMetadatas: indexFields.map(
+              indexFieldMetadatas: (indexFields ?? []).map(
                 (indexFieldMetadata) =>
                   ({
                     ...indexFieldMetadata,

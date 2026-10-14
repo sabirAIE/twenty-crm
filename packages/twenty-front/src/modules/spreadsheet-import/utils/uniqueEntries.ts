@@ -8,6 +8,8 @@ export const uniqueEntries = (
   index: number,
 ): Partial<SpreadsheetMatchedOptions>[] =>
   uniqBy(
-    data.map((row) => ({ entry: row[index] })),
+    (data ?? [])
+      .filter((row) => Array.isArray(row) && isDefined(row[index]))
+      .map((row) => ({ entry: row[index] })),
     'entry',
   ).filter(({ entry }) => !!entry);

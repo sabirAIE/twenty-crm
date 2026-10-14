@@ -136,4 +136,24 @@ describe('getUniqueConstraintsFields', () => {
     expect(result[1]).toHaveLength(1);
     expect(result[1]?.[0]).toEqual(mockEmailField);
   });
+
+  it('should handle unique indexes with undefined indexFieldMetadatas gracefully', () => {
+    const uniqueIndexWithoutFields = createMockIndexMetadata(
+      'index-id-2',
+      'unique_without_fields',
+      true,
+      undefined,
+    );
+
+    const objectMetadata = createMockObjectMetadata(
+      [mockIdField, mockNameField],
+      [uniqueIndexWithoutFields],
+    );
+
+    const result = getUniqueConstraintsFields(objectMetadata);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual([mockIdField]);
+    expect(result[1]).toEqual([]);
+  });
 });
