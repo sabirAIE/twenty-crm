@@ -31,17 +31,16 @@ COPY ./packages/twenty-shared /app/packages/twenty-shared
 COPY ./packages/twenty-sdk /app/packages/twenty-sdk
 COPY ./packages/twenty-client-sdk /app/packages/twenty-client-sdk
 
-RUN npx nx run twenty-front:lingui:extract && \
-    npx nx run twenty-front:lingui:compile
-
 # To skip the memory-intensive frontend build, pre-build on the host:
 #   npx nx build twenty-front
 # The check below will use packages/twenty-front/build/ if it already exists.
 RUN if [ -d /app/packages/twenty-front/build ]; then \
       echo "Using pre-built frontend from host"; \
     else \
+      npx nx run twenty-front:lingui:compile && \
       NODE_OPTIONS="--max-old-space-size=8192" npx nx build twenty-front; \
     fi
+
 
 FROM nginx:alpine AS twenty-front
 
@@ -61,3 +60,35 @@ HEALTHCHECK --interval=5s --timeout=5s --retries=10 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/healthz || exit 1
 
 LABEL org.opencontainers.image.description="Twenty standalone frontend image."
+
+
+# ===========================================================================
+# Target: twenty-front-dev (Vite dev server)
+#   docker build --target twenty-front-dev -f packages/twenty-docker/twenty-front/Dockerfile .
+# ===========================================================================
+
+FROM front-deps AS twenty-front-dev
+
+COPY ./packages/twenty-front /app/packages/twenty-front
+COPY ./packages/twenty-front-component-renderer /app/packages/twenty-front-component-renderer
+COPY ./packages/twenty-ui /app/packages/twenty-ui
+COPY ./packages/twenty-shared /app/packages/twenty-shared
+COPY ./packages/twenty-sdk /app/packages/twenty-sdk
+COPY ./packages/twenty-client-sdk /app/packages/twenty-client-sdk
+
+RUN npx nx run twenty-shared:build && \
+    npx nx run twenty-front:lingui:compile
+
+WORKDIR /app/packages/twenty-front
+
+ENV REACT_APP_PORT=3000 \
+    VITE_HOST=0.0.0.0 \
+    REACT_APP_SERVER_BASE_URL=http://host.docker.internal:3000 \
+    CHOKIDAR_USEPOLLING=true
+
+EXPOSE 3000
+
+CMD ["npx", "nx", "run", "twenty-front:start", "--host", "0.0.0.0", "--port", "3000"]
+
+LABEL org.opencontainers.image.description="Twenty development frontend image with Vite dev server."
+
