@@ -26,6 +26,12 @@ prod-run:
 prod-postgres-run:
 	@docker run -d -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres --name twenty-postgres twenty-postgres:$(TAG)
 
+front-build:
+	@cd ../.. && docker build --target twenty-front -f ./packages/twenty-docker/twenty/Dockerfile --platform $(PLATFORM) --tag twenty-front:$(TAG) . && cd -
+
+front-run:
+	@docker run -d -p 3000:3000 --name twenty-front twenty-front:$(TAG)
+
 # =============================================================================
 # Local Development Services
 # Run these from the repository root: make -C packages/twenty-docker <target>
