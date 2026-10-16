@@ -36,7 +36,7 @@ echo.
 echo [INFO] Waiting for Twenty CRM server to become ready (running migrations & startup)...
 set /a retries=0
 :wait_loop
-curl -s --fail http://localhost:3000/healthz >nul 2>&1
+curl -s --fail http://localhost:3002/healthz >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
     goto :ready
 )
@@ -56,8 +56,8 @@ echo [OK] Twenty CRM is healthy and ready!
 :open_browser
 echo.
 echo ========================================================
-echo Web App URL: http://localhost:3000
+echo Web App URL: http://localhost:3002
 echo ========================================================
 echo.
-start http://localhost:3000
+start http://localhost:3002
 
